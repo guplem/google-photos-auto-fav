@@ -1,0 +1,122 @@
+/*
+ * The panel lives inside the Google Photos page, so every rule is prefixed and
+ * every property is set explicitly. Nothing here is inherited from the site.
+ */
+
+.gpaf-root {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 2147483000;
+  width: max-content;
+  max-width: 320px;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 12px;
+  font:
+    400 13px/1.45 'Google Sans',
+    Roboto,
+    Arial,
+    sans-serif;
+  color: #e8eaed;
+  background: rgb(32 33 36 / 96%);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 45%);
+}
+
+.gpaf-toggle {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.gpaf-toggle:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+/* A run keeps going while the panel is collapsed, so the title must say so. */
+.gpaf-root[data-gpaf-running='true'] .gpaf-toggle::after {
+  content: ' (running)';
+  color: #fdd663;
+}
+
+.gpaf-root[data-gpaf-collapsed='true'] .gpaf-body {
+  display: none;
+}
+
+.gpaf-body {
+  padding: 4px 8px 2px;
+}
+
+.gpaf-summary,
+.gpaf-message {
+  margin: 0 0 8px;
+  color: #bdc1c6;
+}
+
+.gpaf-message:empty {
+  display: none;
+}
+
+.gpaf-file,
+.gpaf-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  cursor: pointer;
+}
+
+.gpaf-file input {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.gpaf-file-text,
+.gpaf-check-text {
+  flex: none;
+  color: #bdc1c6;
+}
+
+.gpaf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gpaf-button {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 999px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.gpaf-button:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.gpaf-button--primary {
+  border-color: transparent;
+  font-weight: 500;
+  color: #202124;
+  background: #fdd663;
+}
+
+.gpaf-button--primary:hover {
+  background: #fde293;
+}

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Google Photos auto Fav</title>
+    <link rel="stylesheet" href="optionsPage.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Google Photos auto Fav</h1>
+
+      <section>
+        <h2>The run</h2>
+        <p class="hint">
+          Open an album, press <strong>Start</strong> in the panel at the bottom left, and the extension walks the album and marks
+          every photo whose file name is in your list.
+        </p>
+
+        <label class="row">
+          <input type="checkbox" id="dryRun" />
+          <span>Dry run: report what would change and click nothing</span>
+        </label>
+      </section>
+
+      <section>
+        <h2>Speed and safety</h2>
+        <p class="hint">
+          The extension reads the file name and the favourite button after each move. Both belong to the previous photo for a
+          moment. These numbers decide how long it waits before it believes what it reads. Raise them on a slow connection. A
+          photo the extension could not read is skipped and listed in the report, never marked by a guess.
+        </p>
+
+        <label class="row">
+          <span class="label">Read the page every (ms)</span>
+          <input type="number" id="pollMs" min="20" max="1000" step="10" />
+        </label>
+
+        <label class="row">
+          <span class="label">Ignore the first (ms) of each photo</span>
+          <input type="number" id="minDwellMs" min="0" max="5000" step="50" />
+        </label>
+
+        <label class="row">
+          <span class="label">One reading must hold for (ms)</span>
+          <input type="number" id="confirmMs" min="50" max="5000" step="50" />
+        </label>
+
+        <label class="row">
+          <span class="label">Give up on one photo after (ms)</span>
+          <input type="number" id="timeoutMs" min="1000" max="60000" step="500" />
+        </label>
+
+        <label class="row">
+          <span class="label">Wait for a click to take effect (ms)</span>
+          <input type="number" id="clickConfirmMs" min="500" max="30000" step="500" />
+        </label>
+      </section>
+
+      <section>
+        <h2>Button names</h2>
+        <p class="hint">
+          The extension finds the favourite button by the name a screen reader would announce. Google Photos writes that name in
+          your own language and can rename it. Put one name per line. Use <strong>Copy report</strong> in the panel to see the
+          names Google Photos actually shows you, under <code>page_now.toolbarControlNames</code>.
+        </p>
+
+        <label class="row column">
+          <span class="label">Names that mean "not a favourite yet"</span>
+          <textarea id="favoriteLabels" rows="6" spellcheck="false"></textarea>
+        </label>
+
+        <label class="row column">
+          <span class="label">Names that mean "already a favourite"</span>
+          <textarea id="unfavoriteLabels" rows="5" spellcheck="false"></textarea>
+        </label>
+
+        <label class="row column">
+          <span class="label">Names of the button that opens the info panel</span>
+          <textarea id="infoLabels" rows="3" spellcheck="false"></textarea>
+        </label>
+      </section>
+
+      <section>
+        <h2>Stored data</h2>
+        <p class="hint">
+          The list of file names stays on this computer, in the extension's own storage. Nothing is sent anywhere.
+        </p>
+        <p class="hint" id="listSummary"></p>
+        <button type="button" id="clearList" class="secondary">Delete the loaded list</button>
+      </section>
+
+      <div class="footer">
+        <button type="button" id="save" class="primary">Save settings</button>
+        <button type="button" id="reset" class="secondary">Reset to defaults</button>
+        <span id="status" role="status"></span>
+      </div>
+    </main>
+
+    <script type="module" src="optionsPage.js"></script>
+  </body>
+</html>
