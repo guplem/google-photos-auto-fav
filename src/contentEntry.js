@@ -15,7 +15,12 @@ import { isAlbumContext, readGooglePhotosLocation, findGridPhotoLinks } from './
 import { createDomHelpers } from './domControls.js';
 import { createFavoritesListStore, createEmptyListRecord } from './favorites/favoritesListStore.js';
 import { createFavoritesLookup, parseFavoritesFile } from './favorites/favoritesList.js';
-import { clickFavoriteControl, collectToolbarControls, probeFavoriteState } from './favorites/favoriteProbe.js';
+import {
+  clickFavoriteControl,
+  collectToolbarControls,
+  describeFavoriteControl,
+  probeFavoriteState,
+} from './favorites/favoriteProbe.js';
 import { collectVisibleFileNames, readCurrentFileName } from './favorites/photoFileNameReader.js';
 import { createPhotoViewerNavigator } from './favorites/photoViewerNavigator.js';
 import { runAlbumFavoriting } from './favorites/albumFavoritingRun.js';
@@ -90,6 +95,7 @@ export async function start() {
       toolbarControlNames: collectToolbarControls(buildFavoriteProbeDeps()).map((control) => control.name),
       visibleFileNames: collectVisibleFileNames(buildFileNameReaderDeps()),
       favoriteState: probeFavoriteState(buildFavoriteProbeDeps()),
+      favoriteControl: describeFavoriteControl(buildFavoriteProbeDeps()),
       dialogOpen: viewerNavigator.isDialogOpen(),
       nextControlState: viewerNavigator.readNextControlState(),
       viewport: { width: window.innerWidth, height: window.innerHeight },
@@ -200,7 +206,7 @@ export async function start() {
 
       // The file name only exists in the info panel, so open it before the walk
       // starts. The walk asks again whenever a name is missing.
-      viewerNavigator.requestInfoPanel();
+      viewerNavigator.requestInfoPanel(0);
       await wait(VIEWER_OPEN_WAIT_MS);
 
       const startedAt = Date.now();
@@ -210,7 +216,7 @@ export async function start() {
         readFileName: () => readCurrentFileName(buildFileNameReaderDeps()),
         probeFavoriteState: () => probeFavoriteState(buildFavoriteProbeDeps()),
         clickFavorite: () => clickFavoriteControl(buildFavoriteProbeDeps()),
-        requestInfoPanel: () => viewerNavigator.requestInfoPanel(),
+        requestInfoPanel: (attempt) => viewerNavigator.requestInfoPanel(attempt),
         readNextControlState: () => viewerNavigator.readNextControlState(),
         requestNextPhoto: (attempt) => viewerNavigator.requestNextPhoto(attempt),
         keepPageAwake: () => viewerNavigator.keepChromeAwake(),

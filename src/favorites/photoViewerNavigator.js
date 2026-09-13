@@ -11,8 +11,18 @@ import { CONTROL_SELECTOR, normalizeLabel } from '../domControls.js';
 
 const DIALOG_SELECTOR = '[role="dialog"], [role="alertdialog"], dialog[open]';
 
-/** A "next" control sits past this share of the window width. */
-const RIGHT_EDGE_FRACTION = 0.8;
+/**
+ * A "next" control sits past this share of the window width.
+ *
+ * Half, not four fifths. This run keeps the info panel open, and that panel
+ * takes the right third of the window, so the next-photo chevron sits well left
+ * of the true right edge. A stricter fraction rejected it and every run stopped
+ * on its first photo with `stuck`.
+ *
+ * The name match is the real guard here. This test only breaks a tie, so it
+ * picks the right-most control that already matched a word for "next".
+ */
+const RIGHT_EDGE_FRACTION = 0.5;
 
 /** Words that mean "next photo", in the languages Google Photos is likely to use here. */
 const NEXT_CONTROL_WORDS = [
@@ -77,6 +87,26 @@ function nudgePointerOverViewer(view, step) {
 }
 
 /**
+ * Takes the focus off any button before a key is sent, and returns the element
+ * the key should go to.
+ *
+ * This matters more than it looks. The user starts a run by clicking our Start
+ * button, so that button keeps the focus. Google Photos ignores an arrow key
+ * whose target is a button, because a button has its own keyboard behaviour. The
+ * run then could not advance at all and stopped on its first photo.
+ * @param {Window} view
+ * @returns {EventTarget}
+ */
+function takeFocusOffButtons(view) {
+  const active = view.document.activeElement;
+  if (active instanceof HTMLElement && (active.tagName === 'BUTTON' || active.getAttribute('role') === 'button')) {
+    active.blur();
+    return view.document.body ?? view.document;
+  }
+  return active ?? view.document.body ?? view.document;
+}
+
+/**
  * @param {Window} view
  * @param {string} type
  * @param {keyof typeof KEY_CODES} key
@@ -92,7 +122,7 @@ function dispatchKey(view, type, key) {
   const numeric = KEY_CODES[key];
   Object.defineProperty(event, 'keyCode', { get: () => numeric });
   Object.defineProperty(event, 'which', { get: () => numeric });
-  (view.document.activeElement ?? view.document.body)?.dispatchEvent(event);
+  takeFocusOffButtons(view).dispatchEvent(event);
 }
 
 /**
@@ -137,15 +167,24 @@ export function createPhotoViewerNavigator(view, infoLabels) {
    * @returns {HTMLElement | null}
    */
   function findNextControl(requireRightEdge) {
+    /** @type {HTMLElement | null} */
+    let rightMost = null;
+    let rightMostCentre = Number.NEGATIVE_INFINITY;
+
     for (const control of findVisibleControls()) {
       const name = readControlName(control);
       if (name === '' || !NEXT_CONTROL_WORDS.some((word) => name.includes(word))) continue;
       if (!requireRightEdge) return control;
+
       const box = control.getBoundingClientRect();
-      if (box.left + box.width / 2 < view.innerWidth * RIGHT_EDGE_FRACTION) continue;
-      return control;
+      const centre = box.left + box.width / 2;
+      if (centre < view.innerWidth * RIGHT_EDGE_FRACTION) continue;
+      if (centre <= rightMostCentre) continue;
+
+      rightMost = control;
+      rightMostCentre = centre;
     }
-    return null;
+    return rightMost;
   }
 
   return {
@@ -192,17 +231,26 @@ export function createPhotoViewerNavigator(view, infoLabels) {
      * Asks Google Photos to show the info panel, which is the only place the
      * file name appears.
      *
-     * The `i` key is the documented shortcut. The named control is the fallback,
-     * for the case where the key goes to a focused element that swallows it.
+     * Even attempts press the `i` key, the documented shortcut. Odd attempts
+     * click the named control, for the case where a focused element swallows the
+     * key.
      *
-     * The panel is a toggle, so this must run only while the name is missing.
-     * The caller owns that check: it calls this while a read returns null, and
-     * stops calling as soon as a name appears.
+     * The two never run together. The panel is a **toggle**, and an earlier
+     * version sent the key and then clicked the button in the same call: the key
+     * opened the panel and the click closed it again, every time.
+     *
+     * The panel being a toggle is also why the caller must ask only while the
+     * file name is missing, and must space the requests.
+     * @param {number} attempt
      */
-    requestInfoPanel() {
+    requestInfoPanel(attempt) {
       this.keepChromeAwake();
-      dispatchKey(view, 'keydown', 'i');
-      dispatchKey(view, 'keyup', 'i');
+
+      if (attempt % 2 === 0) {
+        dispatchKey(view, 'keydown', 'i');
+        dispatchKey(view, 'keyup', 'i');
+        return;
+      }
 
       for (const control of findVisibleControls()) {
         if (infoLabels.includes(readControlName(control))) {
@@ -248,9 +296,14 @@ export function createPhotoViewerNavigator(view, infoLabels) {
     /**
      * Asks the page to show the next photo.
      *
-     * Even attempts send the arrow key; odd attempts click the named control.
-     * The two methods alternate so that a failure of one never blocks the other,
-     * and the caller grows its waiting window on each attempt.
+     * The right arrow key is the main way, and every attempt sends it. It is the
+     * same key a person presses, it needs no control on screen, and it works
+     * while the info panel covers the right of the window.
+     *
+     * Odd attempts also click the named next control afterwards. That is the
+     * backup for the case where Google Photos refuses a synthetic key, and it
+     * costs nothing when the key already worked: the caller stops as soon as the
+     * photo id changes.
      * @param {number} attempt
      * @returns {Promise<void>}
      */
@@ -261,14 +314,12 @@ export function createPhotoViewerNavigator(view, infoLabels) {
         await wait(120);
       }
 
-      if (attempt % 2 === 0) {
-        dispatchKey(view, 'keydown', 'ArrowRight');
-        dispatchKey(view, 'keyup', 'ArrowRight');
-        return;
-      }
-
       this.keepChromeAwake();
-      await wait(120);
+      dispatchKey(view, 'keydown', 'ArrowRight');
+      dispatchKey(view, 'keyup', 'ArrowRight');
+      if (attempt % 2 === 0) return;
+
+      await wait(150);
       findNextControl(true)?.click();
     },
 

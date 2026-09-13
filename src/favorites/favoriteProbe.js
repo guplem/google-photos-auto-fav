@@ -99,6 +99,37 @@ export function probeFavoriteState(deps) {
   return classifyFavoriteState(collectToolbarControls(deps), deps.favoriteLabels, deps.unfavoriteLabels);
 }
 
+/** Attributes that only carry Google's own obfuscated bookkeeping. */
+const NOISE_ATTRIBUTES = ['class', 'style', 'jsaction', 'jsname', 'jscontroller', 'jsshadow', 'jsslot'];
+
+/** Longest attribute value the diagnostics keep. */
+const MAX_ATTRIBUTE_VALUE_LENGTH = 80;
+
+/**
+ * Dumps every meaningful attribute of the favourite control.
+ *
+ * This answers the one question the extension cannot answer on its own: does
+ * Google Photos report the favourite state at all? If the control carries no
+ * `aria-pressed` and keeps the same name whether or not the photo is a
+ * favourite, then nothing on the page separates the two, and a run must not
+ * click. Open a photo you already starred, read this, and compare.
+ *
+ * @param {FavoriteProbeDeps} deps
+ * @returns {Record<string, string> | null}
+ */
+export function describeFavoriteControl(deps) {
+  const control = findFavoriteControl(collectToolbarControls(deps), deps.favoriteLabels, deps.unfavoriteLabels);
+  if (control === null) return null;
+
+  /** @type {Record<string, string>} */
+  const attributes = { tagName: control.element.tagName.toLowerCase() };
+  for (const attribute of control.element.attributes) {
+    if (NOISE_ATTRIBUTES.includes(attribute.name)) continue;
+    attributes[attribute.name] = attribute.value.slice(0, MAX_ATTRIBUTE_VALUE_LENGTH);
+  }
+  return attributes;
+}
+
 /**
  * Clicks the favourite control of the photo on screen.
  *

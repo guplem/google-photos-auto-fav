@@ -76,6 +76,7 @@ Click **Copy report** and paste the result into a text editor. It answers what t
 | `photos.clickFailed`           | The run pressed the button and Google Photos did not change the photo.                         |
 | `list.notSeenInAlbum`          | Names in your list that the album never showed. A long list here means the run ended early.    |
 | `page_now.toolbarControlNames` | The button names the extension can see right now. You need this for the troubleshooting below. |
+| `page_now.favoriteControl`     | Every attribute of the favourite button. See "Check that the page reports the star" below.     |
 
 The report holds file names, because file names are the whole point of this extension. Do not paste it in public if those names matter to you.
 
@@ -104,6 +105,16 @@ Click the extension icon in the Chrome toolbar, or click **Options** in the pane
 | Button names                         | The words the extension looks for. See the troubleshooting below.            |
 
 Raise the three middle numbers on a slow connection. Photos reported as unreadable are the sign that they are too low.
+
+### Check that the page reports the star
+
+Do this once, before your first real run. The extension must be able to tell a starred photo from an unstarred one, or it would click on both and remove the star from the ones you already had.
+
+1. Open a photo you have **already** starred. Press **Copy report** and keep `page_now.favoriteControl` and `page_now.favoriteState`.
+2. Open a photo you have **not** starred. Press **Copy report** again.
+3. Compare the two.
+
+`favoriteState` must read `favorited` for the first and `not-favorited` for the second. If both read the same, or if nothing in `favoriteControl` differs between them, the page does not report the state. Stop, and open an issue with both reports: the extension needs a new signal before it is safe to run.
 
 ## Troubleshooting
 

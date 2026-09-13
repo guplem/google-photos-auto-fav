@@ -60,7 +60,7 @@
  * @property {() => string | null} readFileName  The file name on screen; null means "cannot tell yet".
  * @property {() => FavoriteState | null} probeFavoriteState  The toolbar verdict; null means "cannot tell yet".
  * @property {() => boolean} clickFavorite  Press the favourite control. False when the toolbar offers none.
- * @property {() => void} requestInfoPanel  Ask Google Photos to show the info panel, where the file name lives.
+ * @property {(attempt: number) => void} requestInfoPanel  Ask Google Photos to show the info panel, one method per attempt number.
  * @property {() => 'enabled' | 'disabled' | 'missing'} readNextControlState
  * @property {(attempt: number) => Promise<void>} requestNextPhoto  Ask the page to move on, one method per attempt number.
  * @property {() => void} keepPageAwake  Make the page show its viewer chrome again.
@@ -132,6 +132,9 @@ export async function runAlbumFavoriting(deps) {
   /** The last file name we trusted. Guard 1 compares against it. See the note at the top. */
   let lastAcceptedFileName = /** @type {string | null} */ (null);
 
+  /** Counts every info-panel request of the whole run, so the two methods alternate. */
+  let infoPanelAttempt = 0;
+
   /**
    * Reads the file name until it is trustworthy.
    *
@@ -144,7 +147,9 @@ export async function runAlbumFavoriting(deps) {
     let candidate = null;
     /** @type {number} */
     let candidateSince = 0;
-    let lastInfoPanelRequestAt = 0;
+    // Negative infinity, not zero: the first miss must ask at once. Zero delays
+    // the first request by the whole retry gap whenever the clock starts near it.
+    let lastInfoPanelRequestAt = Number.NEGATIVE_INFINITY;
 
     while (now() < deadline) {
       await wait(deps.pollMs);
@@ -156,7 +161,8 @@ export async function runAlbumFavoriting(deps) {
         deps.keepPageAwake();
         if (now() - lastInfoPanelRequestAt >= INFO_PANEL_RETRY_MS) {
           lastInfoPanelRequestAt = now();
-          deps.requestInfoPanel();
+          deps.requestInfoPanel(infoPanelAttempt);
+          infoPanelAttempt += 1;
         }
         candidate = null;
         continue;

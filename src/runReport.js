@@ -27,6 +27,7 @@
  * @property {readonly string[]} toolbarControlNames
  * @property {readonly string[]} visibleFileNames
  * @property {'favorited' | 'not-favorited' | null} favoriteState
+ * @property {Record<string, string> | null} favoriteControl  Every attribute of the favourite control.
  * @property {boolean} dialogOpen
  * @property {'enabled' | 'disabled' | 'missing'} nextControlState
  * @property {{ width: number, height: number }} viewport
@@ -75,6 +76,9 @@ export function buildRunReport(input) {
       toolbarControlNames: [...input.toolbarControlNames],
       visibleFileNames: [...input.visibleFileNames],
       favoriteState: input.favoriteState,
+      // Compare this between a photo you starred and one you did not. If nothing
+      // here differs, the page does not report the state and a run must not click.
+      favoriteControl: input.favoriteControl,
       dialogOpen: input.dialogOpen,
       nextControlState: input.nextControlState,
     },

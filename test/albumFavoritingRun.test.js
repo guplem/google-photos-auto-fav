@@ -29,6 +29,8 @@ function createFakeAlbum(photos, { staleMs = 0, infoPanelOpens = true } = {}) {
 
   /** @type {string[]} */
   const clickedKeys = [];
+  /** @type {number[]} */
+  const infoPanelAttempts = [];
 
   const current = () => /** @type {FakePhoto} */ (photos[index]);
   const previous = () => (index === 0 ? null : /** @type {FakePhoto} */ (photos[index - 1]));
@@ -42,6 +44,9 @@ function createFakeAlbum(photos, { staleMs = 0, infoPanelOpens = true } = {}) {
     },
     get photos() {
       return photos;
+    },
+    get infoPanelAttempts() {
+      return infoPanelAttempts;
     },
 
     /** @type {Partial<import('../src/favorites/albumFavoritingRun.js').AlbumFavoritingRunDeps>} */
@@ -63,7 +68,8 @@ function createFakeAlbum(photos, { staleMs = 0, infoPanelOpens = true } = {}) {
         photo.favorited = true;
         return true;
       },
-      requestInfoPanel: () => {
+      requestInfoPanel: (/** @type {number} */ attempt) => {
+        infoPanelAttempts.push(attempt);
         if (infoPanelOpens) infoPanelOpen = true;
       },
       readNextControlState: () => (index < photos.length - 1 ? 'enabled' : 'disabled'),
@@ -175,6 +181,17 @@ test('skips the photo and clicks nothing when the info panel never opens', async
 
   assert.deepEqual(album.clickedKeys, []);
   assert.equal(outcome.unreadable, 1);
+});
+
+test('numbers the info-panel requests, so the key and the button alternate', async () => {
+  // The panel is a toggle. Sending the key and clicking the button in one go
+  // opens it and closes it again, so the two must take turns.
+  const album = createFakeAlbum([{ key: 'a', fileName: 'IMG_1.HEIC' }], { infoPanelOpens: false });
+
+  await run(album);
+
+  assert.ok(album.infoPanelAttempts.length >= 2, 'the run must ask more than once');
+  assert.deepEqual(album.infoPanelAttempts.slice(0, 2), [0, 1]);
 });
 
 test('two photos in a row with the same file name leave the second unread', async () => {

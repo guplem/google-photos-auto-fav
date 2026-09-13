@@ -44,6 +44,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     'unfavourite',
     'remove from favorites',
     'remove from favourites',
+    'remove favorite',
+    'remove favourite',
     'quitar de favoritos',
     'eliminar de favoritos',
     'quitar como favorito',
