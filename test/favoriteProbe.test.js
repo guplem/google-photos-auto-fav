@@ -32,6 +32,18 @@ test('aria-pressed beats the name, because the name is translated and can be ren
   assert.equal(classifyFavoriteState([control('favorite', false)], FAVORITE_LABELS, UNFAVORITE_LABELS), 'not-favorited');
 });
 
+test('a bare "favourite" name with no aria-pressed means "cannot tell yet"', () => {
+  // Google Photos labels the button "Favourite" in both states and reports the
+  // truth only in aria-pressed. Reading the bare name as "not a favourite" would
+  // click a photo that already has a star, and take the star away.
+  assert.equal(classifyFavoriteState([control('favourite')], ['favourite'], UNFAVORITE_LABELS), null);
+  assert.equal(classifyFavoriteState([control('favorite')], FAVORITE_LABELS, UNFAVORITE_LABELS), null);
+});
+
+test('a name that says the direction is trusted without aria-pressed', () => {
+  assert.equal(classifyFavoriteState([control('add to favorites')], FAVORITE_LABELS, UNFAVORITE_LABELS), 'not-favorited');
+});
+
 test('a toolbar with no favourite control means "cannot tell yet", never "not a favourite"', () => {
   // This is the important one: the toolbar draws a moment after the photo, and
   // guessing "not a favourite" here would click a control that is not there yet,

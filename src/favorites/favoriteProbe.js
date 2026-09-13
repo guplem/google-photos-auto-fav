@@ -65,6 +65,19 @@ export function findFavoriteControl(controls, favoriteLabels, unfavoriteLabels) 
 }
 
 /**
+ * Names that toggle the favourite without saying which way it goes.
+ *
+ * Google Photos labels the button "Favourite" whether or not the photo is one,
+ * and reports the truth in `aria-pressed`. So when a name from this list is all
+ * we have, we know nothing: reading it as "not a favourite yet" would click a
+ * photo that already carries a star and take the star away.
+ *
+ * A name that is **not** in this list, such as "add to favorites", names the
+ * direction itself and is safe to trust on its own.
+ */
+const STATE_NEUTRAL_LABELS = ['favorite', 'favourite', 'favorito', 'favorita', 'preferit', 'preferits', 'destacar'];
+
+/**
  * Turns the toolbar into a verdict.
  *
  * Returns `null` for "cannot tell yet". That happens while the toolbar is still
@@ -85,7 +98,13 @@ export function classifyFavoriteState(controls, favoriteLabels, unfavoriteLabels
   // user's language and can rename it, while true and false never change.
   if (control.pressed !== null) return control.pressed ? 'favorited' : 'not-favorited';
 
-  return matchesAnyLabel(control.name, unfavoriteLabels) ? 'favorited' : 'not-favorited';
+  if (matchesAnyLabel(control.name, unfavoriteLabels)) return 'favorited';
+
+  // No pressed state, and a name that does not say which way it goes. See
+  // STATE_NEUTRAL_LABELS: guessing here removes stars the user already placed.
+  if (STATE_NEUTRAL_LABELS.includes(control.name)) return null;
+
+  return 'not-favorited';
 }
 
 /**
