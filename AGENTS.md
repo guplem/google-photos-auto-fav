@@ -2,6 +2,8 @@
 
 A Manifest V3 Chrome extension that marks photos as favourite on `https://photos.google.com`. The user supplies a text file of file names; the extension walks an album and presses the favourite button on every photo whose name is in that file. There is no build step, so the repository folder is the folder Chrome loads. Install, use, and troubleshooting: `README.md`.
 
+Sibling project: [google-photos-auto-date](https://github.com/guplem/google-photos-auto-date) corrects photo timestamps with the same architecture, and shares `googlePhotosPage.js`, `domControls.js`, `photoFileNameReader.js`, `photoViewerNavigator.js` and the walk almost line for line. A fix to any of those usually belongs in both.
+
 ## Commands
 
 | Task                  | Command                                                          | Notes                                                        |
@@ -71,6 +73,8 @@ A content script listed in `manifest.json` cannot be an ES module. `isolatedWorl
 - **A dialog poisons a reading.** `probeFavoriteState` returns `null` whenever `isBlocked()` reports an open dialog, and `requestNextPhoto` presses Escape before it acts.
 - **Google Photos rewrites the address bar with no event.** `watchLocation()` polls every 300ms. A `popstate` listener alone misses most navigations.
 - **`aria-pressed` is the only favourite signal Google Photos gives.** The button keeps `aria-label="Favourite"` whether or not the photo is one, and flips `aria-pressed` between `true` and `false`. `classifyFavoriteState` reads `aria-pressed` first, and when it is absent it falls back to the name. That fallback must never trust a bare toggle word: `STATE_NEUTRAL_LABELS` lists them and the verdict becomes `null` instead. Reading "Favourite" as "not a favourite" would click a starred photo and remove the star.
+- **An attribute appended to a comma-separated selector binds to the last half only.** Learned the hard way in the sibling project: `` `${OPTION_SELECTOR}[aria-selected="true"]` `` expanded to `[role="option"], option[aria-selected="true"]`, matched every option, and `querySelector` returned the first in the page. Nothing here composes a selector that way today, and nothing should start: spell out a selector that carries a state, on every half.
+- **When a probe fails and the report says nothing, photograph the page.** The sibling project added a `describePage()` that ignores all of its own matching rules and dumps every box, every `role`, and the text of any open dialog, captured automatically at the moment a probe fails. Two layout assumptions that had survived several rounds of reasoning were disproved by it within one run each. Reach for that before asking the user to catch anything by hand.
 - **`node --test test/` fails on Node 24.** It treats the folder as a module. Run bare `node --test`, which is what `npm test` does.
 - **Prettier uses `endOfLine: "auto"` on purpose.** This machine has `core.autocrlf=true`, so the working tree holds CRLF line endings. A pinned `endOfLine: "lf"` would fail the format check on every file while the content is correct.
 

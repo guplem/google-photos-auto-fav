@@ -192,6 +192,10 @@ To redraw the icons, run:
 powershell -ExecutionPolicy Bypass -File scripts/makeIcons.ps1
 ```
 
+## See also
+
+[google-photos-auto-date](https://github.com/guplem/google-photos-auto-date) is the same idea for timestamps: give it a list of corrections and it walks an album fixing the date, the time and the timezone of every photo you name.
+
 ## Credits
 
 The structure, the DOM rules, and the walk over an album come from [google-photos-compare-and-save](https://github.com/guplem/google-photos-compare-and-save).
